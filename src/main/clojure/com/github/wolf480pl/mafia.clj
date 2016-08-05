@@ -1,5 +1,6 @@
 (ns com.github.wolf480pl.mafia
-    (:require [clojure.string :as str]))
+    (:require [clojure.string :as str]
+              [com.github.wolf480pl.mafia.player :refer :all]))
 
 (import '(io.netty.bootstrap ServerBootstrap)
         '(io.netty.channel.nio NioEventLoopGroup)
@@ -23,7 +24,7 @@
         (decode [ctx, msg, out]
             (when (seq msg)
                 (let [splitMsg (str/split msg #" ")]
-                    (.add out (Command. (first splitMsg) (vec (rest splitMsg)))))))))
+                    (.add out (->Command (first splitMsg) (vec (rest splitMsg)))))))))
 
 (defn slashCommandDecoder []
     (proxy [MessageToMessageDecoder] []
@@ -33,7 +34,7 @@
                       cmd (first splitMsg)
                       cmd (if (str/starts-with? cmd "/") (.substring cmd 1))
                       args (if cmd (rest splitMsg) splitMsg)]
-                    (.add out (Command. cmd (vec args))))))))
+                    (.add out (->Command cmd (vec args))))))))
 
 (comment
 (defn handler []
@@ -45,14 +46,18 @@
 )
 
 
-(defn handler []
+(defn handler [playerReg]
     (proxy [SimpleChannelInboundHandler] []
         (channelRead0 [ctx, msg]
-             (println (.name msg) (.args msg))
-             (.writeAndFlush (.channel ctx) (format "cmd: %s args: %s\n" (.name msg) (.args msg)))
-        )))
+            (println (.name msg) (.args msg))
+            (.writeAndFlush (.channel ctx) (format "cmd: %s args: %s\n" (.name msg) (.args msg)))
+        )
+        (channelActive [ctx]
+            (let [player (newPlayer playerReg
+                                    (fn [msg] (.writeAndFlush (.channel ctx) (format "%s\n" msg))))]
+                (sendMsg player (format "Hello Player%d" (.id player)))))))
 
-(defn initializer []
+(defn initializer [playerReg]
     (proxy [ChannelInitializer] []
         (initChannel [ch]
             (let [pipeline (.pipeline ch)]
@@ -62,7 +67,7 @@
                                     (StringDecoder. CHARSET)
                                     (IdleStateHandler. IDLE_TIMEOUT, 0, 0)
                                     (slashCommandDecoder)
-                                    (handler)
+                                    (handler playerReg)
                                    ]))
                 ; --- outbound ---
                 (.addLast pipeline (into-array ChannelHandler [(StringEncoder. CHARSET)]))
@@ -79,7 +84,7 @@
           bootstrap (doto (ServerBootstrap.)
                         (.group bossGroup, workerGroup)
                         (.channel NioServerSocketChannel)
-                        (.childHandler (initializer))
+                        (.childHandler (initializer (playerRegistry)))
                         (.childOption ChannelOption/TCP_NODELAY true)
                         (.childOption ChannelOption/SO_KEEPALIVE true))
           future (.bind bootstrap address)
