@@ -1,7 +1,10 @@
 (ns com.github.wolf480pl.mafia.player
     (require [com.github.wolf480pl.mafia.util :refer :all]))
 
-(defrecord Player [id, sendfn])
+(defrecord Player [id, sendfn, state])
+
+(defn makePlayer [id, sendfn]
+    (->Player id sendfn (atom {:defaultCmd "say"})))
 
 (defn sendMsg [player, msg]
     ((.sendfn player) msg))
@@ -17,7 +20,7 @@
         (reify PlayerRegistry
             (newPlayer [_, sendfn]
                 (let [id (idCtr)
-                      player (->Player id sendfn)]
+                      player (makePlayer id sendfn)]
                     (send registry assoc id player)
                     player))
             (getPlayer [_, id]
