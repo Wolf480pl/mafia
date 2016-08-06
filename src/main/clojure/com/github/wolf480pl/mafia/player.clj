@@ -5,6 +5,7 @@
 (defprotocol Player
     (sendMsg [player, msg] "Sends a message to the player")
     (joinRoom [player, room] "Makes the player join the specified room")
+    (roomLeft [player, room] "Called whenever the player leaves a room")
     (getDefaultCommand [player] "Returns the player's default command")
     (getRoomRegistry [player] "Returns the player's room registry")
     (getRoom [player] "Returns the player's room"))
@@ -16,6 +17,8 @@
                (let [nick (format "Player%d" id)]
                    (swap! state assoc :room room) ;FIXME: We don't know yet if claimNick will succeed
                    (claimNick room nick player)))
+           (roomLeft [player, room]
+               (swap! state dissoc :room))
            (getDefaultCommand [player] (:defaultCmd @state))
            (getRoomRegistry [player] roomReg)
            (getRoom [player] (:room @state)))

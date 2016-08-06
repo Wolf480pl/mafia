@@ -1,6 +1,7 @@
 (ns com.github.wolf480pl.mafia.netty
     (:require [clojure.string :as str]
               [com.github.wolf480pl.mafia.player :refer :all]
+              [com.github.wolf480pl.mafia.room :refer (leave)]
               [com.github.wolf480pl.mafia.room-impl :refer (roomRegistry)]
               [com.github.wolf480pl.mafia.command :refer (->Command regStandardCommands dispatchCmd)]))
 
@@ -58,7 +59,10 @@
                 (let [player (newPlayer playerReg
                                         (fn [msg] (.writeAndFlush (.channel ctx) (format "%s\n" msg))))]
                     (sendMsg player (format "Hello Player%d" (.id player)))
-                    (reset! ourPlayer player))))))
+                    (reset! ourPlayer player)))
+            (channelInactive [ctx]
+                (let [player @ourPlayer]
+                    (some-> (getRoom player) (leave player)))))))
 
 (defn initializer [handlerFactory]
     (proxy [ChannelInitializer] []
