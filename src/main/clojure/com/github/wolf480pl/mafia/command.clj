@@ -1,7 +1,7 @@
 (ns com.github.wolf480pl.mafia.command
     (:require [clojure.string :as str] 
               [com.github.wolf480pl.mafia.player :as ply :refer (sendMsg joinRoom getDefaultCommand getRoomRegistry)]
-              [com.github.wolf480pl.mafia.room :refer (getRoom getNick broadcast)]))
+              [com.github.wolf480pl.mafia.room :refer (getRoom getNick claimNick broadcast)]))
 
 (defrecord Command [name args])
 
@@ -32,5 +32,9 @@
     (let [room (ply/getRoom player)]
         (broadcast room (format "<%s> %s" (getNick room player) (strRest args)))))
 
+(defn nick [player newNick]
+    (let [room (ply/getRoom player)]
+        (claimNick room newNick player)))
+
 (defn regStandardCommands [registry]
-    (regCmd-> registry (echo) (join) (say)))
+    (regCmd-> registry (echo) (join) (nick) (say)))

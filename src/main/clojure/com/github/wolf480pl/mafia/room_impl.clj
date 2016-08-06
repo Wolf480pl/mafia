@@ -9,7 +9,7 @@
           (broadcast room (if-not oldNick
                              (format "%s joined %s" nick (.name room))
                              (format "%s changed nick to %s" oldNick nick)))
-          (sendMsg player (format "Joined %s as %s" (.name room) nick)))
+          (if-not oldNick (sendMsg player (format "Joined %s as %s" (.name room) nick))))
         (sendMsg player (format "Can't join %s: %s" (.name room) reason))))
 
 (defrecord RoomImpl [name, state]
