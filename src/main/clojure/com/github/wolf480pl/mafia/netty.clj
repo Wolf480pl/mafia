@@ -1,6 +1,7 @@
 (ns com.github.wolf480pl.mafia.netty
     (:require [clojure.string :as str]
               [com.github.wolf480pl.mafia.player :refer :all]
+              [com.github.wolf480pl.mafia.room-impl :refer (roomRegistry)]
               [com.github.wolf480pl.mafia.command :refer (->Command regStandardCommands dispatchCmd)]))
 
 (import '(io.netty.bootstrap ServerBootstrap)
@@ -82,12 +83,13 @@
 
 (defn start [address]
     (let [commandReg (regStandardCommands {})
+          playerReg (playerRegistry (roomRegistry))
           bossGroup (NioEventLoopGroup. 1)
           workerGroup (NioEventLoopGroup.)
           bootstrap (doto (ServerBootstrap.)
                         (.group bossGroup, workerGroup)
                         (.channel NioServerSocketChannel)
-                        (.childHandler (initializer #(handler (playerRegistry) commandReg)))
+                        (.childHandler (initializer #(handler playerReg commandReg)))
                         (.childOption ChannelOption/TCP_NODELAY true)
                         (.childOption ChannelOption/SO_KEEPALIVE true))
           future (.bind bootstrap address)
