@@ -1,4 +1,4 @@
-(ns com.github.wolf480pl.mafia
+(ns com.github.wolf480pl.mafia.netty
     (:require [clojure.string :as str]
               [com.github.wolf480pl.mafia.player :refer :all]))
 
@@ -14,7 +14,7 @@
 
 (def MAX_LINE_LENGTH 512)
 (def IDLE_TIMEOUT 30)
-(def CHARSET (Charset/forName "UTF-8")) 
+(def CHARSET (Charset/forName "UTF-8"))
 
 
 (defrecord Command [name args])
@@ -91,7 +91,7 @@
           channel (.channel future)]
         [future (reify NettyServer
                     (stop [_]
-                        (-> channel 
+                        (-> channel
                             (.close)
                             (.addListener (reify ChannelFutureListener
                                               (operationComplete [_, _]
